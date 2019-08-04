@@ -64,8 +64,13 @@ one_review <- function(review_id){
   temp <- httr::content(temp, as = "parsed")
   temp <- xmlToList(xmlParse(temp))
   
+  read_at_date <- ifelse(!is.null(temp$review$read_at),
+                         unlist(strsplit(temp$review$read_at, split = " "))[[length(unlist(strsplit(temp$review$read_at, split = " ")))]],
+                         NA)
+
   out <- data.frame(rating = nullifelse(temp$review$rating),
                     avgrating = nullifelse(temp$review$book$average_rating),
+                    read_at = read_at_date,
                     n_ratings = nullifelse(temp$review$book$ratings_count),
                     title = nullifelse(temp$review$book$title),
                     author = nullifelse(temp$review$book$authors$author$name),
@@ -74,14 +79,35 @@ one_review <- function(review_id){
   return(out)
 }
 
-reviews <- list()
-
-#crappy looped solution
-for(id in 1:length(IDs)){
-  print(id)
-  one <- one_review(IDs[[id]])
-  reviews <- c(reviews, one)
-}
-
 #vectorized solution
-test <- sapply(id_list, one_review)
+test <- lapply(id_list, one_review)
+test_df <- do.call(rbind, test)
+
+reviews_df <- test_df %>%
+  mutate(displacement = as.numeric(rating) - as.numeric(avgrating)) %>%
+  arrange(desc(displacement))
+
+#lots of missingness because of year read
+ggplot(reviews_df) +
+  geom_jitter(aes(y = displacement, x = lubridate::year(as.Date(read_at, format = "%Y")), 
+                  color = rating)) +
+  labs(x = "Year Read",
+       y = "Distance from Average Rating",
+       legend = "Rating") +
+  theme(legend.position = "bottom")
+
+#violin plot of rating vs. displacement
+ggplot(reviews_df) +
+  geom_violin(aes(y = displacement, x = rating, 
+                  fill = rating)) +
+  geom_hline(aes(yintercept = 0)) +
+  scale_y_continuous(limits = c(-5, 2), breaks = seq(-5, 2)) +
+  labs(x = "Rating",
+       y = "Distance from Average Rating",
+       title = "Goodreads Ratings' Displacement by Value",
+       subtitle = paste0("Average Overall Goodreads Rating = ", 
+                         formatC(mean(as.numeric(reviews_df$avgrating), na.rm = T), format = "f", digits = 2), "\n",
+                         "Average Overall Personal Rating = ", 
+                         formatC(mean(as.numeric(reviews_df$rating), na.rm = T), format = "f", digits = 2)),
+       caption = paste0("N = ", nrow(reviews_df), " books read")) +
+  theme(legend.position = "none")
