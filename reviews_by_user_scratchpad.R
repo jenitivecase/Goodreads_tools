@@ -13,6 +13,7 @@ Sys.setenv(GOODREADS_KEY = "MSSsVeTYFafhHvSgadZXHg")
 
 #it me
 u <- user('10388416')
+id <- '10388416'
 
 # 
 # u_reviews <- tidyRSS::tidyfeed(as.character(u$reviews_rss_url)) 
@@ -80,7 +81,7 @@ one_review <- function(review_id){
 }
 
 #vectorized solution
-test <- lapply(id_list, one_review)
+test <- lapply(IDs, one_review)
 test_df <- do.call(rbind, test)
 
 reviews_df <- test_df %>%
