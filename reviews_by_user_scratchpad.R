@@ -97,6 +97,8 @@ ggplot(reviews_df) +
        legend = "Rating") +
   theme(legend.position = "bottom")
 
+ggsave("./output/review_displacement_by_year.png", device = "png", height = 8, width = 8)
+
 #violin plot of rating vs. displacement
 ggplot(reviews_df) +
   geom_violin(aes(y = displacement, x = rating, 
@@ -112,3 +114,6 @@ ggplot(reviews_df) +
                          formatC(mean(as.numeric(reviews_df$rating), na.rm = T), format = "f", digits = 2)),
        caption = paste0("N = ", nrow(reviews_df), " books read")) +
   theme(legend.position = "none")
+
+
+ggsave("./output/review_displacement_by_rating.png", device = "png", height = 8, width = 8)
